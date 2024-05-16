@@ -26,6 +26,7 @@ except:
 
 MACHINENAME='HPC'
 USE_AMP=True #AUTOMATIC MIXED PRECISION
+DATAPATH='./data/subset_images'
 # if MACHINENAME=='HPC':
 #     os.environ['TORCH_HOME'] = '/data/cmpe249-fa23/torchhome/'
 #     DATAPATH='/data/cmpe249-fa23/torchvisiondata/'

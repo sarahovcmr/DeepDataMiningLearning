@@ -231,23 +231,23 @@ def get_yolodataset(is_train, is_val, args):
     pathsplits=[x for x in pathsplits if x] #filter out empty string
     if is_val == True:
         if pathsplits[-1].endswith('coco'):
-            annotation = os.path.join(rootPath, 'val2017.txt')
+            annotation = os.path.join(rootPath, 'instances_subval2017.json') #'instances_val2017.json'
         else:
-            annotation = os.path.join(rootPath, 'images_val.txt')
+            annotation = os.path.join(rootPath, 'instances_subval2017.json')
         yolodataset = YOLODataset(root=rootPath, annotation=annotation, train=False, transform=None, data=data,classes=None,use_segments=False,use_keypoints=False)
     else: #training
         if pathsplits[-1].endswith('coco'):
-            annotation = os.path.join(rootPath, 'train2017.txt')
+            annotation = os.path.join(rootPath, 'subset_annotations.json')
         else:
-            annotation = os.path.join(rootPath, 'images_train.txt')
+            annotation = os.path.join(rootPath, 'subset_annotations.json')
         yolodataset = YOLODataset(root=rootPath, annotation=annotation, train=is_train, transform=None, data=data,classes=None,use_segments=False,use_keypoints=False)
     num_classes = yolodataset.numclass
     return yolodataset, num_classes
 
 from DeepDataMiningLearning.detection import utils
 class args:
-    data_path = '/data/cmpe249-fa23/coco/' #'/data/cmpe249-fa23/WaymoCOCO/' #'/data/cmpe249-fa23/coco/'
-    annotationfile = '/data/cmpe249-fa23/coco/train2017.txt'
+    data_path = '/data/' #'/data/cmpe249-fa23/WaymoCOCO/' #'/data/cmpe249-fa23/coco/'
+    annotationfile = '/mnt/c/mygit/DeepDataMiningLearning/DeepDataMiningLearning/data/annotations/instances_subtrain2017.json'
     weights = None
     test_only = True
     backend = 'PIL' #tensor

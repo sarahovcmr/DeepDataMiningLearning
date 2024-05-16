@@ -217,9 +217,9 @@ class YOLODataset(torch.utils.data.Dataset):
         #super().__init__()
         self.root = root #/data/cmpe249-fa23/coco/
         if train:
-            foldername='train2017'
+            foldername='subset_images'
         else:
-            foldername='val2017'
+            foldername='test_subset_images'
         self.cache_path = os.path.join(root, foldername+'.cache.npy')
         self.img_path = annotation #os.path.join(root, foldername, 'images') #contains test2017(all.jpg fiels) train2017 val2017(all.jpg)
         #self.annotation = annotation
@@ -544,8 +544,8 @@ class YOLODataset(torch.utils.data.Dataset):
 
 import yaml
 if __name__ == "__main__":
-    root='/data/cmpe249-fa23/coco/'
-    annotation='/data/cmpe249-fa23/coco/train2017.txt'
+    root='/data'
+    annotation='/mnt/c/mygit/DeepDataMiningLearning/DeepDataMiningLearning/data/annotations/subset_annotations.json'
     dataset_cfgfile = './DeepDataMiningLearning/detection/dataset.yaml'
     with open(dataset_cfgfile, errors='ignore', encoding='utf-8') as f:
         s = f.read()  # string

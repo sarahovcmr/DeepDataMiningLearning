@@ -34,7 +34,7 @@ class SmoothedValue:
     def __init__(self, window_size=20, fmt=None):
         if fmt is None:
             fmt = "{median:.4f} ({global_avg:.4f})"
-        self.deque = deque(maxlen=window_size)
+        self.deque = deque(maxlen=100)
         self.total = 0.0
         self.count = 0
         self.fmt = fmt
@@ -68,17 +68,26 @@ class SmoothedValue:
         return d.mean().item()
 
     @property
+ 
+
+
     def global_avg(self):
-        return self.total / self.count
+            if self.count == 0:
+                return 0
+            return self.total / self.count
 
     @property
     def max(self):
+        if not self.deque:  # Check if the deque is empty
+            return 0  # Return an appropriate default value or None if no values have been added
         return max(self.deque)
 
     @property
     def value(self):
-        return self.deque[-1]
-
+        if not self.deque:  # Check if the deque is empty
+            return 0  # Return an appropriate default value or None if no values have been added
+        return self.deque[-1] 
+    
     def __str__(self):
         return self.fmt.format(
             median=self.median, avg=self.avg, global_avg=self.global_avg, max=self.max, value=self.value

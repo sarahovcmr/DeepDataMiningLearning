@@ -16,7 +16,7 @@ from DeepDataMiningLearning.detection.modules.block import (AIFI, C1, C2, C3, C3
 from DeepDataMiningLearning.detection.modules.utils import extract_filename, LOGGER, make_divisible, non_max_suppression, scale_boxes #colorstr, 
 from DeepDataMiningLearning.detection.modules.head import Detect, IDetect, Classify, Pose, RTDETRDecoder, Segment
 #Detect, Classify, Pose, RTDETRDecoder, Segment
-from DeepDataMiningLearning.detection.modules.lossv8 import myv8DetectionLoss
+from DeepDataMiningLearning.detection.modules.lossv8 import myv8DetectionLoss 
 from DeepDataMiningLearning.detection.modules.lossv7 import myv7DetectionLoss
 from DeepDataMiningLearning.detection.modules.anchor import check_anchor_order
 
@@ -50,7 +50,7 @@ def yaml_load(file='data.yaml', append_filename=True):
 #ref: https://github.com/ultralytics/ultralytics/blob/main/ultralytics/nn/tasks.py
 class YoloDetectionModel(nn.Module):
     #scale from nsmlx
-    def __init__(self, cfg='yolov8n.yaml', scale='n', ch=3, nc=None, verbose=True):  # model, input channels, number of classes
+    def __init__(self, cfg='yolov5s.yaml', scale='n', ch=3, nc=None, verbose=True):  # model, input channels, number of classes
         super().__init__()
         self.yaml = cfg if isinstance(cfg, dict) else yaml_load(cfg)  # cfg dict, nc=80, 'scales', 'backbone', 'head'
         self.yaml['scale'] = scale
@@ -402,14 +402,18 @@ def intersect_dicts(da, db, exclude=()):
     return {k: v for k, v in da.items() if k in db and all(x not in k for x in exclude) and v.shape == db[k].shape}
 
 
-# def create_yolomodel(modelname,num_classes):
-#     cfgpath='./DeepDataMiningLearning/detection/modules/'
-#     cfgfile=os.path.join(cfgpath, modelname+'.yaml')
-#     yolomodel=YoloDetectionModel(cfg=cfgfile, ch = 3, nc=num_classes)
-#     return yolomodel
-
+def create_yolomodel(modelname,num_classes):
+    cfgpath='./DeepDataMiningLearning/detection/modules/'
+    cfgfile=os.path.join(cfgpath, modelname+'.yaml')
+    try:
+        yolomodel = YoloDetectionModel(cfg=cfgfile, ch=3, nc=num_classes)
+        return yolomodel
+    except Exception as e:
+        print(f"Error during model creation: {e}")
+        return None
+    
 def load_defaultcfgs(cfgPath):
-    DEFAULT_CFG_PATH = cfgPath #ROOT / 'cfg/default.yaml'
+    DEFAULT_CFG_PATH = './DeepDataMiningLearning/detection/modules/' #ROOT / 'cfg/default.yaml'
     DEFAULT_CFG_DICT = yaml_load(DEFAULT_CFG_PATH)
     for k, v in DEFAULT_CFG_DICT.items():
         if isinstance(v, str) and v.lower() == 'none':
@@ -478,32 +482,44 @@ from torchvision.utils import draw_bounding_boxes
 from torchvision.transforms.functional import to_pil_image
 import torchvision
 
-def create_yolomodel(modelname, num_classes = None, ckpt_file = None, fp16 = False, device = 'cuda:0', scale='n'):
-    
-    modelcfg_file=os.path.join('./DeepDataMiningLearning/detection/modules', modelname+'.yaml')
-    cfgPath='./DeepDataMiningLearning/detection/modules/default.yaml'
-    myyolo = None
-    preprocess =None
-    classesList = None
-    if os.path.exists(modelcfg_file) and os.path.exists(cfgPath):
-        DEFAULT_CFG_DICT = load_defaultcfgs(cfgPath)
-        classes=DEFAULT_CFG_DICT['names']
-        nc=len(classes) #80
-        classesList = list(classes.values()) #class name list
-        myyolo=YoloDetectionModel(cfg=modelcfg_file, scale=scale, ch=3, nc =num_classes)
-        if ckpt_file is not None and os.path.exists(ckpt_file):
-            myyolo=load_checkpoint(myyolo, ckpt_file)
-        myyolo=myyolo.to(device).eval()
-        stride = max(int(myyolo.stride.max()), 32)  # model stride
-        names = myyolo.module.names if hasattr(myyolo, 'module') else myyolo.names  # get class names
-        #model = model.fuse(verbose=verbose) if fuse else model
-        myyolo = myyolo.half() if fp16 else myyolo.float()
+def load_configuration_files(model_config_path, default_config_path):
+    if not os.path.exists(model_config_path):
+        raise FileNotFoundError(f"Model configuration file not found: {model_config_path}")
+    if not os.path.exists(default_config_path):
+        raise FileNotFoundError(f"Default configuration file not found: {default_config_path}")
+    return load_defaultcfgs(default_config_path)
 
-        preprocess = YoloTransform(min_size=640, max_size=640, device=device, fp16=fp16, cfgs=DEFAULT_CFG_DICT)
-        return myyolo, preprocess, classesList
+def initialize_yolo_model(config_file, num_classes, checkpoint_file, device, fp16):
+    yolo_model = YoloDetectionModel(cfg=config_file, scale="n", ch=3, nc=num_classes)
+    if checkpoint_file and os.path.exists(checkpoint_file):
+        yolo_model = load_checkpoint(yolo_model, checkpoint_file)
     else:
-        print("Config file not found")
-        return myyolo, preprocess, classesList
+        print("No checkpoint file provided or file does not exist.")
+    yolo_model = yolo_model.to(device).eval()
+    yolo_model = yolo_model.half() if fp16 else yolo_model.float()
+    return yolo_model
+
+def create_yolomodel(modelname, num_classes=None, ckpt_file=None, fp16=False, device='cuda:0'):
+    model_config_path = os.path.join('./DeepDataMiningLearning/detection/modules/', f'{modelname}.yaml')
+    if not os.path.exists(model_config_path):
+        print(f"Configuration file not found: {model_config_path}")
+        return None, None
+
+    try:
+        model = YoloDetectionModel(cfg=model_config_path, num_classes=num_classes, device=device)
+        if ckpt_file and os.path.exists(ckpt_file):
+            model = load_checkpoint(model, ckpt_file)
+        else:
+            print(f"Checkpoint file not found: {ckpt_file}")
+        model.to(device)
+        if fp16:
+            model.half()
+    except Exception as e:
+        print(f"Failed to create or freeze the YOLO model: {e}")
+        return None, None
+
+    # Additional setup or processing here
+    return model, preprocess
 
 def freeze_yolomodel(model, freeze=[]):
     # Freeze layers

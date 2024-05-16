@@ -23,7 +23,7 @@ elif MACHINENAME=='Container':
     os.environ['TORCH_HOME'] = '/data/torchhome/'
     DATAPATH='/data/torchvisiondata'
 else:
-    DATAPATH='./data'
+    DATAPATH='./data/subset_images'
 
 class MyTrainDataset(Dataset):
     def __init__(self, size):

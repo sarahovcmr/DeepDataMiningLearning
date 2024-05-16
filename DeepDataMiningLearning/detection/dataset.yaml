@@ -1,7 +1,7 @@
 # Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
-path: E:\coco\  # dataset root dir
-train: images/train2017  # train images (relative to 'path') 128 images
-val: images/train2017  # val images (relative to 'path') 128 images
+path: C:/mygit/DeepDataMiningLearning # dataset root dir
+train: C:/mygit/DeepDataMiningLearning/DeepDataMiningLearningdata/data/subset_images  # train images (relative to 'path') 128 images
+val: C:/mygit/DeepDataMiningLearning/DeepDataMiningLearningdata/data/test_subset_images  # val images (relative to 'path') 128 images
 test:  # test images (optional)
 
 # Classes

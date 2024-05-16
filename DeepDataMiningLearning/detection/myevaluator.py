@@ -601,8 +601,8 @@ from DeepDataMiningLearning.detection import utils
 from DeepDataMiningLearning.detection.dataset import get_dataset
 from DeepDataMiningLearning.detection.models import create_detectionmodel
 class args:
-    data_path = '/data/cmpe249-fa23/coco/' #'/data/cmpe249-fa23/COCOoriginal/' # #'/data/cmpe249-fa23/WaymoCOCO/' #'/data/cmpe249-fa23/coco/'
-    annotationfile = '/data/cmpe249-fa23/coco/train2017.txt'
+    data_path = '/mnt/c/mygit/DeepDataMiningLearning/DeepDataMiningLearning/data/subset_images' #'/data/cmpe249-fa23/COCOoriginal/' # #'/data/cmpe249-fa23/WaymoCOCO/' #'/data/cmpe249-fa23/coco/'
+    annotationfile = '/mnt/c/mygit/DeepDataMiningLearning/DeepDataMiningLearning/data/annotations/subset_annotations.json' #'/data/cmpe249-fa23/COCOoriginal/annotations/instances_train2017.json' #'/data/cmpe249-fa23/WaymoCOCO/annotations/instances_train2017.json' #'/data/cmpe249-fa23/coco/annotations/instances_train2017.json'
     weights = None
     test_only = True
     backend = 'PIL' #tensor

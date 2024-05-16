@@ -1,3 +1,5 @@
+import sys
+sys.path.insert(0, '/mnt/c/mygit/DeepDataMiningLearning')
 import datetime
 import os
 import time
@@ -22,9 +24,10 @@ except:
 
 
 #Select the visible GPU
-#os.environ['CUDA_VISIBLE_DEVICES'] = "0,1,2,3" #"0,1"
+os.environ['CUDA_VISIBLE_DEVICES'] = "0" #"0,1"
+DATAPATH='./DeepDataMiningLearning/data/subset_images'
 
-MACHINENAME='HPC'
+# MACHINENAME='HPC'
 USE_AMP=True #AUTOMATIC MIXED PRECISION
 # if MACHINENAME=='HPC':
 #     os.environ['TORCH_HOME'] = '/data/cmpe249-fa23/torchhome/'
@@ -44,7 +47,7 @@ def get_args_parser(add_help=True):
 
     parser = argparse.ArgumentParser(description="PyTorch Detection Training", add_help=add_help)
 
-    parser.add_argument("--data-path", default="/data/cmpe249-fa23/WaymoCOCO/", type=str, help="dataset path") #"/data/cmpe249-fa23/WaymoCOCO/"
+    parser.add_argument("--data-path", default="./DeepDataMiningLearning/data", type=str, help="dataset path") #"/data/cmpe249-fa23/WaymoCOCO/"
     parser.add_argument("--annotationfile", default="", type=str, help="dataset annotion file path, e.g., coco json file") #annotations_train200new.json
     parser.add_argument(
         "--dataset",
@@ -103,7 +106,7 @@ def get_args_parser(add_help=True):
         "--lr-gamma", default=0.1, type=float, help="decrease lr by a factor of lr-gamma (multisteplr scheduler only)"
     )
     parser.add_argument("--print-freq", default=5, type=int, help="print frequency")
-    parser.add_argument("--output-dir", default="/data/cmpe249-fa23/trainoutput", type=str, help="path to save outputs")
+    parser.add_argument("--output-dir", default="./DeepDataMiningLearning/data", type=str, help="path to save outputs")
     parser.add_argument("--resume", default="", type=str, help="path of checkpoint") #/data/cmpe249-fa23/trainoutput/kitti/model_4.pth
     parser.add_argument("--start_epoch", default=0, type=int, help="start epoch")
     parser.add_argument("--aspect-ratio-group-factor", default=-1, type=int) #3
@@ -189,7 +192,6 @@ def main(args):
     # dataset_test.transform = get_transform(is_train=False, args=args)
     print("train set len:", len(dataset))
     print("Test set len:", len(dataset_test))
-
     print("Creating data loaders")
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(dataset)
@@ -210,9 +212,8 @@ def main(args):
     )
 
     data_loader_test = torch.utils.data.DataLoader(
-        dataset_test, batch_size=1, sampler=test_sampler, num_workers=1, collate_fn=utils.collate_fn
+        dataset_test, batch_size=2, sampler=test_sampler, num_workers=1, collate_fn=utils.collate_fn
     )
-
     print("Creating model")
     #kwargs = {"trainable_backbone_layers": args.trainable_backbone_layers}
     kwargs = {"trainable": args.trainable}
@@ -333,10 +334,11 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, sc
             losses = sum(loss for loss in loss_dict.values()) #single value
 
         # reduce losses over all GPUs for logging purposes
-        loss_dict_reduced = utils.reduce_dict(loss_dict)
-        losses_reduced = sum(loss for loss in loss_dict_reduced.values())
+        # loss_dict_reduced = utils.reduce_dict(loss_dict)
+        # losses_reduced = sum(loss for loss in loss_dict_reduced.values())
 
-        loss_value = losses_reduced.item()
+        # loss_value = losses_reduced.item()
+        loss_value = sum(loss.item() for loss in loss_dict.values() if loss.requires_grad)
 
         if not math.isfinite(loss_value):
             print(f"Loss is {loss_value}, stopping training")
@@ -344,7 +346,7 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, sc
             sys.exit(1)
 
         optimizer.zero_grad()
-        if scaler is not None:
+        if scaler:
             scaler.scale(losses).backward()
             scaler.step(optimizer)
             scaler.update()
@@ -352,13 +354,10 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, sc
             losses.backward()
             optimizer.step()
 
-        if lr_scheduler is not None:
-            lr_scheduler.step()
+        metric_logger.update(loss=loss_value, **{k: v.item() for k, v in loss_dict.items()})
 
-        metric_logger.update(loss=losses_reduced, **loss_dict_reduced)
-        metric_logger.update(lr=optimizer.param_groups[0]["lr"])
-
-    return metric_logger
+    if scaler is not None:
+        torch.cuda.synchronize()
 
 if __name__ == "__main__":
     args = get_args_parser().parse_args()

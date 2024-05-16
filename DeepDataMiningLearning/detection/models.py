@@ -196,9 +196,12 @@ def create_detectionmodel(modelname, num_classes=None, trainable_layers=0, ckpt_
         else:
             print("Model name not supported")
     elif modelname.startswith('yolo'):
-        model, preprocess, classes=create_yolomodel(modelname, num_classes, ckpt_file, fp16, device, scale)
-        model= freeze_yolomodel(model, freeze=[])
-        #ckpt file is already loaded in create_yolomodel
+        try:
+            model, preprocess, classes = create_yolomodel(modelname, fp16, device)
+            model = freeze_yolomodel(model, freeze=[])
+        except Exception as e:
+            print(f"Failed to create or freeze the YOLO model: {str(e)}")
+            model = None  # Ensure model is set to None if creation fails
     else:
         print('Model name not supported')
 
